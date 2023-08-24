@@ -1,14 +1,15 @@
 interface WatcherFn {
-  (...args: any[]): keyof Scope;
+  (arg: Scope): any;
 }
 
 interface ListenerFn {
-  (...args: any[]): any;
+  (newValue: any, oldValue: any, scope: Scope): any;
 }
 
 interface Watcher {
   watchFn: WatcherFn;
   listenerFn: ListenerFn;
+  last: any;
 }
 
 export class Scope {
@@ -18,10 +19,21 @@ export class Scope {
     this.$$watchers.add({
       watchFn,
       listenerFn,
+      last: Symbol(undefined), // or function as in original
     });
   }
 
   public $digest() {
-    this.$$watchers.forEach((watcher) => watcher.listenerFn());
+    this.$$watchers.forEach((watcher) => {
+      const newValue = watcher.watchFn(this);
+      const oldValue = watcher.last;
+
+      watcher.watchFn(this);
+
+      if (newValue !== oldValue) {
+        watcher.last = newValue;
+        watcher.listenerFn(newValue, oldValue, this);
+      }
+    });
   }
 }

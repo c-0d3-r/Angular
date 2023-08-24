@@ -10,22 +10,33 @@ describe('Scope', () => {
   });
 
   describe('digest', () => {
-    let scope: Record<any, any>;
+    let scope: Scope & { [key: string]: any };
 
     beforeEach(() => {
       scope = new Scope();
     });
 
-    it('calls the listener function of watch on first $digest', () => {
-      const watchFn = function () {
-        return 'test';
-      };
-      const listenerFn = jest.fn();
+    it('should call the listener function when the watched value changed', () => {
+      scope.counter = 0;
 
-      scope.$watch(watchFn, listenerFn);
+      scope.$watch(
+        function (scope: Record<any, any>) {
+          return scope.counter;
+        },
+        function (newValue: number, oldValue: number, scope: Record<any, any>) {
+          scope.counter++;
+        }
+      );
+
+      expect(scope.counter).toBe(0);
+
       scope.$digest();
 
-      expect(listenerFn).toHaveBeenCalledTimes(1);
+      expect(scope.counter).toBe(1);
+
+      scope.$digest();
+
+      expect(scope.counter).toBe(2);
     });
   });
 });
